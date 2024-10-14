@@ -1,8 +1,9 @@
 Your conversations are not saved when the program exits.
 
-Two commands: 
- - ctrl-c to exit app
- - ctrl-n to start a new conversation
+Three core commands: 
+ 1. ctrl-c to exit app
+ 2. ctrl-n to start a new conversation
+ 3. tab to toggle scroll mode (vim keybinds to scroll)
 
 Set openai key:
     - `export OPENAI_API_KEY=<your key>`

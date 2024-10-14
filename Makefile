@@ -1,3 +1,5 @@
+t:
+	go test ./...
 r:
 	TEST_MODE="false" go run .
 d:

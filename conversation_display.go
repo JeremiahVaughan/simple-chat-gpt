@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -19,8 +20,9 @@ import (
 const useHighPerformanceRenderer = false
 
 var (
-	pageStyle  = lipgloss.NewStyle()
-	titleStyle = func() lipgloss.Style {
+	pageStyle   = lipgloss.NewStyle()
+	senderStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("201"))
+	titleStyle  = func() lipgloss.Style {
 		b := lipgloss.RoundedBorder()
 		b.Right = "├"
 		return lipgloss.NewStyle().BorderStyle(b).Padding(0, 1)
@@ -31,14 +33,22 @@ var (
 		b.Left = "┤"
 		return titleStyle.BorderStyle(b)
 	}()
+	streamingResponse chan string = make(chan string, 1000)
+	loadingFinished   chan error  = make(chan error)
+	loading           bool
 )
 
 type model struct {
-	messages []string
-	ready    bool
-	viewport viewport.Model
-	textarea textarea.Model
-	err      error
+	recordedMessages []string
+	sendMessages     []string
+	displayMessages  []string
+	ready            bool
+	viewport         viewport.Model
+	textarea         textarea.Model
+	err              error
+	spinner          spinner.Model
+	currentRequest   string
+	currentResponse  string
 }
 
 func (m model) Init() tea.Cmd {
