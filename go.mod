@@ -1,4 +1,4 @@
-module simple-chat-gpt
+module github.com/JeremiahVaughan/simple-chat-gpt
 
 go 1.23.0
 

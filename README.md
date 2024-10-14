@@ -7,3 +7,6 @@ Three core commands:
 
 Set openai key:
     - `export OPENAI_API_KEY=<your key>`
+
+Install:
+    - `go install github.com/JeremiahVaughan/simple-chat-gpt@v1.0.0`
