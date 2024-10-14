@@ -19,7 +19,11 @@ var chatClient *openai.Client
 var ctx context.Context
 
 func init() {
-	chatClient = openai.NewClient(os.Getenv("OPENAI_API_KEY"))
+	key := os.Getenv("OPENAI_API_KEY")
+	if key == "" {
+		log.Fatal("your API key is missing, please add OPENAI_API_KEY as an environmental variable")
+	}
+	chatClient = openai.NewClient(key)
 }
 
 func main() {
