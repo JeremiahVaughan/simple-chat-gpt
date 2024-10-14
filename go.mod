@@ -1,4 +1,4 @@
-module chat-light
+module simple-chat-gpt
 
 go 1.23.0
 
