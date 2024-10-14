@@ -37,6 +37,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.textarea.Reset()
 				m.textarea.Focus()
 			}
+			enterChatMode = true
 		case "tab":
 			if chatMode {
 				m.textarea.Blur()
@@ -185,7 +186,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if chatMode {
 		m.textarea, cmd = m.textarea.Update(msg)
 		cmds = append(cmds, cmd)
-	} else if enterChatMode {
+	}
+	if enterChatMode {
 		m.textarea.Focus()
 		newBlink := cursor.Blink()
 		m.textarea, cmd = m.textarea.Update(newBlink)
