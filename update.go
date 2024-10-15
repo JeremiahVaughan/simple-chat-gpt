@@ -69,7 +69,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.displayMessages[i] = dm
 			}
-			m.viewport.SetContent(generateViewportContent(m.displayMessages, messageDelimiter))
+			m.viewport.SetContent(generateViewportContent(m.displayMessages, messageDelimiter, m.viewport.Width))
 			m.textarea.Reset()
 			m.viewport.GotoBottom()
 			loading = true
@@ -87,7 +87,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				enterChatMode = true
 			}
 		case "ctrl+u":
-			if !chatMode && m.viewport.YOffset > 0 {
+			if !chatMode {
 				newOffset := m.viewport.YOffset - (m.viewport.Height / 2)
 				if newOffset < 0 {
 					newOffset = 0
@@ -95,7 +95,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.viewport.SetYOffset(newOffset)
 			}
 		case "ctrl+d":
-			if !chatMode && m.viewport.YOffset < m.viewport.TotalLineCount() {
+			if !chatMode {
 				newOffset := m.viewport.YOffset + (m.viewport.Height / 2)
 				if newOffset > m.viewport.TotalLineCount() {
 					newOffset = m.viewport.TotalLineCount()
@@ -111,11 +111,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.viewport.GotoBottom()
 			}
 		case "k":
-			if !chatMode && m.viewport.YOffset > 0 {
+			if !chatMode && !m.viewport.AtTop() {
 				m.viewport.SetYOffset(m.viewport.YOffset - 1)
 			}
 		case "j":
-			if !chatMode && m.viewport.YOffset < m.viewport.TotalLineCount() {
+			if !chatMode && !m.viewport.AtBottom() {
 				m.viewport.SetYOffset(m.viewport.YOffset + 1)
 			}
 		}
@@ -135,7 +135,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.viewport = viewport.New(viewportWidth, viewportHeight)
 			m.viewport.YPosition = headerHeight
 			m.viewport.HighPerformanceRendering = useHighPerformanceRenderer
-			m.viewport.SetContent(strings.Join(m.displayMessages, "\n"))
+			m.viewport.SetContent(generateViewportContent(m.displayMessages, messageDelimiter, m.viewport.Width))
 			m.ready = true
 			rightMarginWidth := (msg.Width - viewportWidth) / 2
 			pageStyle = pageStyle.MarginLeft(rightMarginWidth)
@@ -150,6 +150,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.viewport.Width = viewportWidth
 			m.viewport.Height = viewportHeight
+			m.viewport.SetContent(generateViewportContent(m.displayMessages, messageDelimiter, m.viewport.Width))
 		}
 
 		if useHighPerformanceRenderer {
@@ -163,7 +164,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.currentResponse = drainAllResponses(m.currentResponse, streamingResponse)
 		if m.currentResponse != "" {
 			m.displayMessages[len(m.displayMessages)-1] = m.currentResponse
-			m.viewport.SetContent(generateViewportContent(m.displayMessages, messageDelimiter))
+			m.viewport.SetContent(generateViewportContent(m.displayMessages, messageDelimiter, m.viewport.Width))
 		}
 		select {
 		case err := <-loadingFinished:
@@ -207,6 +208,41 @@ func drainAllResponses(currentResponse string, allResponses chan string) string 
 	}
 }
 
-func generateViewportContent(displayMessages []string, messageDelimiter string) string {
+func generateViewportContent(displayMessages []string, messageDelimiter string, viewportWidth int) string {
+	for i, msg := range displayMessages {
+		displayMessages[i] = applyWordWrap(msg, viewportWidth)
+	}
 	return "\n" + strings.Join(displayMessages, messageDelimiter)
+}
+
+func applyWordWrap(msg string, viewportWidth int) string {
+	var newMsg string
+	var wordCanadate string
+	var currentLineLength int
+	for i, r := range msg {
+		if r != ' ' {
+			wordCanadate += string(r)
+			currentLineLength++
+			if r != '\n' && i != len(msg)-1 {
+				continue
+			}
+		}
+		if currentLineLength < viewportWidth {
+			if currentLineLength != len(wordCanadate) {
+				newMsg += " "
+			}
+			currentLineLength++
+		} else {
+			if r != '\n' {
+				newMsg += "\n"
+			}
+			currentLineLength = len(wordCanadate)
+		}
+		if r == '\n' {
+			currentLineLength = 0
+		}
+		newMsg += wordCanadate
+		wordCanadate = ""
+	}
+	return newMsg
 }

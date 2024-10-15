@@ -1,2 +1,3 @@
 ./bin
 debug
+__debug_bin*                                                          
