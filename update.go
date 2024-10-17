@@ -216,33 +216,69 @@ func generateViewportContent(displayMessages []string, messageDelimiter string, 
 }
 
 func applyWordWrap(msg string, viewportWidth int) string {
-	var newMsg string
-	var wordCanadate string
-	var currentLineLength int
-	for i, r := range msg {
-		if r != ' ' {
-			wordCanadate += string(r)
-			currentLineLength++
-			if r != '\n' && i != len(msg)-1 {
-				continue
-			}
-		}
-		if currentLineLength < viewportWidth {
-			if currentLineLength != len(wordCanadate) {
-				newMsg += " "
-			}
-			currentLineLength++
-		} else {
-			if r != '\n' {
-				newMsg += "\n"
-			}
-			currentLineLength = len(wordCanadate)
-		}
-		if r == '\n' {
-			currentLineLength = 0
-		}
-		newMsg += wordCanadate
-		wordCanadate = ""
+	blocks := strings.Split(msg, "\n")
+	out := []string{}
+	for _, block := range blocks {
+		formatted, cnt := replaceIndent(block)
+		wrapped := overflowWrap(formatted, viewportWidth)
+		out = append(out, repairIndent(wrapped, cnt))
 	}
-	return newMsg
+
+	return strings.Join(out, "\n")
+}
+
+func replaceIndent(s string) (string, int) {
+	cnt := 0
+	for _, char := range s {
+		if char != ' ' {
+			break
+		}
+		cnt += 1
+	}
+	return strings.Repeat("c", cnt) + s[cnt:], cnt
+}
+
+func repairIndent(s string, cnt int) string {
+	return strings.Repeat(" ", cnt) + s[cnt:]
+}
+
+/*
+Assumes input is a trimmed string with only a single white space between words
+*/
+func overflowWrap(s string, maxWidth int) string {
+	if maxWidth < 1 {
+		panic("assertion failed: maxWidth must be at least 1")
+	}
+	words := strings.Fields(s)
+	lines := []string{}
+	var line strings.Builder
+	for _, word := range words {
+		if line.Len()+1+len(word) >= maxWidth {
+			if line.Len() > 0 {
+				lines = append(lines, line.String())
+				line = strings.Builder{}
+			}
+			for len(word) >= maxWidth {
+				left, right := breakWord(word, maxWidth)
+				lines = append(lines, left)
+				word = right
+			}
+			if len(word) > 0 {
+				line.WriteString(word)
+			}
+		} else {
+			if line.Len() > 0 {
+				line.WriteRune(' ')
+			}
+			line.WriteString(word)
+		}
+	}
+	if line.Len() > 0 {
+		lines = append(lines, line.String())
+	}
+	return strings.Join(lines, "\n")
+}
+
+func breakWord(word string, maxWidth int) (string, string) {
+	return word[:maxWidth], word[maxWidth:]
 }
