@@ -9,4 +9,4 @@ Set openai key:
     - `export OPENAI_API_KEY=<your key>`
 
 Install:
-    - `go install github.com/JeremiahVaughan/simple-chat-gpt@v1.1.2`
+    - `go install github.com/JeremiahVaughan/simple-chat-gpt@latest`
