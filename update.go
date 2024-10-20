@@ -219,27 +219,42 @@ func applyWordWrap(msg string, viewportWidth int) string {
 	blocks := strings.Split(msg, "\n")
 	out := []string{}
 	for _, block := range blocks {
-		formatted, cnt := replaceIndent(block)
+		formatted, spaceCount, tabCount := replaceIndent(block)
 		wrapped := overflowWrap(formatted, viewportWidth)
-		out = append(out, repairIndent(wrapped, cnt))
+		if spaceCount > 0 {
+			wrapped = repairIndent(wrapped, spaceCount, " ")
+		}
+		if tabCount > 0 {
+			wrapped = repairIndent(wrapped, tabCount, "\t")
+		}
+		out = append(out, wrapped)
 	}
 
 	return strings.Join(out, "\n")
 }
 
-func replaceIndent(s string) (string, int) {
-	cnt := 0
+func replaceIndent(s string) (string, int, int) {
+	spaceCount := 0
+	tabCount := 0
 	for _, char := range s {
-		if char != ' ' {
+		if char == ' ' {
+			spaceCount += 1
+		} else if char == '\t' {
+			tabCount += 1
+		} else {
 			break
 		}
-		cnt += 1
 	}
-	return strings.Repeat("c", cnt) + s[cnt:], cnt
+	if spaceCount > 0 {
+		s = strings.Repeat("c", spaceCount) + s[spaceCount:]
+	} else if tabCount > 0 {
+		s = strings.Repeat("c", tabCount) + s[tabCount:]
+	}
+	return s, spaceCount, tabCount
 }
 
-func repairIndent(s string, cnt int) string {
-	return strings.Repeat(" ", cnt) + s[cnt:]
+func repairIndent(s string, cnt int, with string) string {
+	return strings.Repeat(with, cnt) + s[cnt:]
 }
 
 /*

@@ -33,7 +33,7 @@ potluckz`
 		words := `package main
 
 import "fmt"
-	
+
 func main() {
     fmt.Println("Hello, World!")
 }`
@@ -65,6 +65,29 @@ import "fmt"
 
 func main() {
     fmt.Println("Hello, World there cruel world, I want to let you know that I
+don't like it!")
+}`
+		width := 80
+		got := applyWordWrap(words, width)
+		if got != expected {
+			t.Errorf("error, expected: %sEND, but got: %sEND", strings.ReplaceAll(expected, " ", "-"), strings.ReplaceAll(got, " ", "-"))
+		}
+	})
+
+	t.Run("tabs should work too", func(t *testing.T) {
+		words := `package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello, World there cruel world, I want to let you know that I don't like it!")
+}`
+		expected := `package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello, World there cruel world, I want to let you know that I
 don't like it!")
 }`
 		width := 80
@@ -248,7 +271,6 @@ And so, the village flourished, forever illuminated by the echoes of stars
 and the warmth of a girl’s pure wish.`
 		width := 75
 		got := applyWordWrap(input, width)
-		os.WriteFile("test-ruselts", []byte(got), 0777)
 		if expected != got {
 			t.Errorf("error, expected: %s, but got: %s", expected, got)
 		}
