@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -38,7 +39,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.textarea.Focus()
 			}
 			enterChatMode = true
-		case "tab":
+		case "esc":
 			if chatMode {
 				m.textarea.Blur()
 			} else if !loading {
@@ -48,40 +49,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if loading {
 				return m, nil
 			}
-			v := m.textarea.Value()
-			if v == "" {
-				return m, nil
-			}
-			m.currentResponse = ""
-			m.currentRequest = v
-			m.sendMessages = make([]string, len(m.recordedMessages)+1)
-			for i, msg := range m.recordedMessages {
-				m.sendMessages[i] = msg
-			}
-			m.sendMessages[len(m.recordedMessages)] = m.currentRequest
-			m.displayMessages = make([]string, len(m.sendMessages)+1)
-			for i, msg := range m.sendMessages {
-				var dm string
-				if isEven(i) {
-					dm = senderStyle.Render(msg)
-				} else {
-					dm = msg
-				}
-				m.displayMessages[i] = dm
-			}
-			m.viewport.SetContent(generateViewportContent(m.displayMessages, messageDelimiter, m.viewport.Width))
-			m.textarea.Reset()
-			m.viewport.GotoBottom()
 			loading = true
 			go func() {
-				err := submitChatMessage(ctx, m.sendMessages)
+				// todo: need to add a context to cancel these select statements should an error occur
+				select {
+				case <-time.After(10 * time.Millisecond):
+					pasteBufferClosed <- true
+				}
+				err := submitChatMessage(ctx, <-messagesReadyToSend)
 				if err != nil {
 					loadingFinished <- fmt.Errorf("error, when submitChatMessage() for update(). Error: %v", err)
 					return
 				}
 				loadingFinished <- nil
 			}()
-			m.textarea.Blur()
 			return m, m.spinner.Tick
 		case "i", "a", "s":
 			if !chatMode {
@@ -184,9 +165,55 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	var skipUpdate bool
 	if chatMode {
-		m.textarea, cmd = m.textarea.Update(msg)
-		cmds = append(cmds, cmd)
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			msgString := msg.String()
+			if msgString == "tab" {
+				result := strings.Builder{}
+				result.WriteString(m.textarea.Value())
+				result.WriteRune('\t')
+				m.textarea.SetValue(result.String())
+				skipUpdate = true
+			}
+		}
+		if !skipUpdate {
+			m.textarea, cmd = m.textarea.Update(msg)
+			cmds = append(cmds, cmd)
+		}
+	}
+	// todo: need to add a context to cancel these select statements should an error occur
+	select {
+	case <-pasteBufferClosed:
+		v := m.textarea.Value()
+		if v == "" {
+			return m, nil
+		}
+		m.currentResponse = ""
+		m.currentRequest = v
+		m.sendMessages = make([]string, len(m.recordedMessages)+1)
+		for i, msg := range m.recordedMessages {
+			m.sendMessages[i] = msg
+		}
+		m.sendMessages[len(m.recordedMessages)] = m.currentRequest
+		m.displayMessages = make([]string, len(m.sendMessages)+1)
+		for i, msg := range m.sendMessages {
+			var dm string
+			if isEven(i) {
+				dm = senderStyle.Render(msg)
+			} else {
+				dm = msg
+			}
+			m.displayMessages[i] = dm
+		}
+		// m.viewport.SetContent(generateViewportContent(m.displayMessages, messageDelimiter, m.viewport.Width))
+		m.viewport.SetContent(strings.Join(m.displayMessages, "\n"))
+		m.textarea.Reset()
+		m.viewport.GotoBottom()
+		m.textarea.Blur()
+		messagesReadyToSend <- m.sendMessages
+	default:
 	}
 	if enterChatMode {
 		m.textarea.Focus()

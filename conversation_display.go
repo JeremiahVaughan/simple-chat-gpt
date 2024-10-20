@@ -33,9 +33,11 @@ var (
 		b.Left = "┤"
 		return titleStyle.BorderStyle(b)
 	}()
-	streamingResponse chan string = make(chan string, 1000)
-	loadingFinished   chan error  = make(chan error)
-	loading           bool
+	streamingResponse   chan string = make(chan string, 1000)
+	loadingFinished     chan error  = make(chan error)
+	loading             bool
+	pasteBufferClosed   chan bool     = make(chan bool)
+	messagesReadyToSend chan []string = make(chan []string, 1)
 )
 
 type model struct {
