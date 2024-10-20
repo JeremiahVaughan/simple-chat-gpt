@@ -81,6 +81,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				loadingFinished <- nil
 			}()
+			m.textarea.Blur()
 			return m, m.spinner.Tick
 		case "i", "a", "s":
 			if !chatMode {
@@ -170,7 +171,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case err := <-loadingFinished:
 			m.resetSpinner()
 			loading = false
-			enterChatMode = true
 			if err == nil {
 				m.recordedMessages = append(
 					m.recordedMessages,
