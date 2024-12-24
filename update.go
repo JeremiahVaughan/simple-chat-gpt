@@ -144,28 +144,28 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case spinner.TickMsg:
 		// Having display messages empty is possible due to the paste buffer window
-        // we can process actual results on the next tick
+		// we can process actual results on the next tick
 		if len(m.displayMessages) != 0 {
 			m.currentResponse = drainAllResponses(m.currentResponse, streamingResponse)
 			if m.currentResponse != "" {
 				m.displayMessages[len(m.displayMessages)-1] = m.currentResponse
 				m.viewport.SetContent(generateViewportContent(m.displayMessages, messageDelimiter, m.viewport.Width))
 			}
-			select {
-			case err := <-loadingFinished:
-				m.resetSpinner()
-				loading = false
-				if err == nil {
-					m.recordedMessages = append(
-						m.recordedMessages,
-						m.currentRequest,
-						m.currentResponse,
-					)
-				}
-			default:
-				m.spinner, cmd = m.spinner.Update(msg)
-				cmds = append(cmds, cmd)
+		}
+		select {
+		case err := <-loadingFinished:
+			m.resetSpinner()
+			loading = false
+			if err == nil {
+				m.recordedMessages = append(
+					m.recordedMessages,
+					m.currentRequest,
+					m.currentResponse,
+				)
 			}
+		default:
+			m.spinner, cmd = m.spinner.Update(msg)
+			cmds = append(cmds, cmd)
 		}
 	}
 
