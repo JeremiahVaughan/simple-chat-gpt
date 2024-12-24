@@ -211,8 +211,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.displayMessages[i] = dm
 		}
-		// m.viewport.SetContent(generateViewportContent(m.displayMessages, messageDelimiter, m.viewport.Width))
-		m.viewport.SetContent(strings.Join(m.displayMessages, "\n"))
+		m.viewport.SetContent(generateViewportContent(m.displayMessages, messageDelimiter, m.viewport.Width))
 		m.textarea.Reset()
 		m.viewport.GotoBottom()
 		m.textarea.Blur()
