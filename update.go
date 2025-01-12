@@ -58,7 +58,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				err := submitChatMessage(ctx, <-messagesReadyToSend)
 				if err != nil {
-					loadingFinished <- fmt.Errorf("error, when submitChatMessage() for update(). Error: %v", err)
+					loadingFinished <- fmt.Errorf("error, when submitChatMessage() for update(). Error: %", err)
 					return
 				}
 				loadingFinished <- nil
@@ -191,9 +191,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	select {
 	case <-pasteBufferClosed:
 		v := m.textarea.Value()
-		if v == "" {
-			return m, nil
-		}
 		m.currentResponse = ""
 		m.currentRequest = v
 		m.sendMessages = make([]string, len(m.recordedMessages)+1)
