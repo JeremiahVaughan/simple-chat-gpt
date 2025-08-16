@@ -24,7 +24,7 @@ func (m model) View() string {
 	}
 	pageContent := fmt.Sprintf(
 		"%s\n%s\n%s\n%s",
-		m.headerView(),
+		m.headerView(m.tokensUsed, maxTokens),
 		m.viewport.View(),
 		m.footerView(),
 		textareaDisplay,

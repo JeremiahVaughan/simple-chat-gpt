@@ -63,6 +63,9 @@ func initModel() model {
 	m.resetSpinner()
 	return m
 }
+
+const maxTokens = 4096
+
 func submitChatMessage(ctx context.Context, sendMessages []string) error {
 	chatRequest := make([]openai.ChatCompletionMessage, len(sendMessages))
 	for i := range sendMessages {
@@ -79,7 +82,7 @@ func submitChatMessage(ctx context.Context, sendMessages []string) error {
 	}
 	req := openai.ChatCompletionRequest{
 		Model:     openai.GPT4oMini,
-		MaxTokens: 4096,
+		MaxTokens: maxTokens,
 		Messages:  chatRequest,
 		Stream:    true,
 	}

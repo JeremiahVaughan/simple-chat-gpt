@@ -51,14 +51,16 @@ type model struct {
 	spinner          spinner.Model
 	currentRequest   string
 	currentResponse  string
+    tokensUsed int
 }
 
 func (m model) Init() tea.Cmd {
 	return textarea.Blink
 }
 
-func (m model) headerView() string {
-	title := titleStyle.Render("Chat Jipity")
+func (m model) headerView(tokenCount int, maxTokens int) string {
+    text := fmt.Sprintf("Tokens used: %d / %d", tokenCount, maxTokens)
+	title := titleStyle.Render(text)
 	line := strings.Repeat("─", max(0, m.viewport.Width-lipgloss.Width(title)))
 	return lipgloss.JoinHorizontal(lipgloss.Center, title, line)
 }

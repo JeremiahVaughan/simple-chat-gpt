@@ -58,7 +58,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				err := submitChatMessage(ctx, <-messagesReadyToSend)
 				if err != nil {
-					loadingFinished <- fmt.Errorf("error, when submitChatMessage() for update(). Error: %", err)
+					loadingFinished <- fmt.Errorf("error, when submitChatMessage() for update(). Error: %v", err)
 					return
 				}
 				loadingFinished <- nil
@@ -103,7 +103,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		headerHeight := lipgloss.Height(m.headerView())
+		headerHeight := 3
 		footerHeight := lipgloss.Height(m.footerView())
 		verticalMarginHeight := headerHeight + footerHeight
 		viewportWidth := 70
@@ -162,6 +162,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.currentRequest,
 					m.currentResponse,
 				)
+                // todo make this effecient
+                for _, rm := range m.recordedMessages {
+                    m.tokensUsed = len(rm) / 4
+                }
 			}
 		default:
 			m.spinner, cmd = m.spinner.Update(msg)
@@ -242,6 +246,7 @@ func generateViewportContent(displayMessages []string, messageDelimiter string, 
 	return "\n" + strings.Join(displayMessages, messageDelimiter)
 }
 
+// todo replace with lipgloss built-in
 func applyWordWrap(msg string, viewportWidth int) string {
 	blocks := strings.Split(msg, "\n")
 	out := []string{}
