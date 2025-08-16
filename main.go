@@ -59,14 +59,29 @@ func initModel() model {
 		textarea:        ta,
 		displayMessages: []string{},
 		err:             nil,
+        selectedAiModel: AiModelFast,
 	}
 	m.resetSpinner()
 	return m
 }
 
-const maxTokens = 4096
+const (
+    AiModelFast = openai.GPT4Dot1Mini
+    AiModelFastButStillSmart = openai.GPT5Mini
+    AiModelSlowButSuperSmart = openai.GPT5
+)
 
-func submitChatMessage(ctx context.Context, sendMessages []string) error {
+var AiModelOrder = []string{AiModelFast, AiModelFastButStillSmart, AiModelSlowButSuperSmart}
+
+// aiModelMap key is ai model, value is token limit
+var aiModelMap = map[string]int{
+    AiModelFast: 8046,
+
+    AiModelFastButStillSmart: 8046,
+    AiModelSlowButSuperSmart: 8046,
+}
+
+func newRequest(aiModel string, sendMessages []string) openai.ChatCompletionRequest {
 	chatRequest := make([]openai.ChatCompletionMessage, len(sendMessages))
 	for i := range sendMessages {
 		var role string
@@ -81,15 +96,25 @@ func submitChatMessage(ctx context.Context, sendMessages []string) error {
 		}
 	}
 	req := openai.ChatCompletionRequest{
-		Model:     openai.GPT4oMini,
-		MaxTokens: maxTokens,
+		Model:     aiModel,
 		Messages:  chatRequest,
 		Stream:    true,
 	}
+    switch aiModel {
+    case AiModelFast:
+        req.MaxTokens = aiModelMap[aiModel]
+    default:
+        // req.MaxPromptTokens = aiModelMap[aiModel] // not sure if needed
+        req.MaxCompletionTokens = aiModelMap[aiModel]
+    }
+    return req
+}
 
+func submitChatMessage(ctx context.Context, sendMessages []string, aiModel string) error {
+    req := newRequest(aiModel, sendMessages)
 	stream, err := chatClient.CreateChatCompletionStream(ctx, req)
 	if err != nil {
-		return fmt.Errorf("error, when creating chat completion stream for submitChatMessage(). Error: %v", err)
+		return fmt.Errorf("error, when creating chat completion stream for submitting chat message. Error: %v", err)
 	}
 	defer stream.Close()
 

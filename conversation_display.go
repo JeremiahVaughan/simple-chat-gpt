@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+    "strconv"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textarea"
@@ -52,14 +53,19 @@ type model struct {
 	currentRequest   string
 	currentResponse  string
     tokensUsed int
+    selectedAiModel string
 }
 
 func (m model) Init() tea.Cmd {
 	return textarea.Blink
 }
 
-func (m model) headerView(tokenCount int, maxTokens int) string {
-    text := fmt.Sprintf("Tokens used: %d / %d", tokenCount, maxTokens)
+func (m model) headerView() string {
+    text := fmt.Sprintf( "%s tokens used: %s / %s",
+        m.selectedAiModel,
+        formatNumberWithCommas(m.tokensUsed),
+        formatNumberWithCommas(aiModelMap[m.selectedAiModel]),
+    )
 	title := titleStyle.Render(text)
 	line := strings.Repeat("─", max(0, m.viewport.Width-lipgloss.Width(title)))
 	return lipgloss.JoinHorizontal(lipgloss.Center, title, line)
@@ -77,3 +83,27 @@ func max(a, b int) int {
 	}
 	return b
 }
+
+func formatNumberWithCommas(num int) string {                         
+    str := strconv.Itoa(num)                                          
+    if len(str) < 4 {
+        return str
+    }
+    reverseStr := reverse(str)                                        
+    var sb strings.Builder                                            
+    for i, c := range reverseStr {                                    
+        if i > 0 && i%3 == 0 {                                        
+            sb.WriteString(",")                                       
+        }                                                             
+        sb.WriteRune(c)                                               
+    }                                                                 
+    return reverse(sb.String())                                       
+}                                                                     
+                                                                      
+func reverse(s string) string {                                       
+    reversed := []rune(s)                                             
+    for i, j := 0, len(reversed)-1; i < j; i, j = i+1, j-1 {          
+        reversed[i], reversed[j] = reversed[j], reversed[i]           
+    }                                                                 
+    return string(reversed)                                           
+}                                                                     

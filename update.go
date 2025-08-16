@@ -37,7 +37,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.displayMessages = []string{}
 				m.textarea.Reset()
 				m.textarea.Focus()
+                m.tokensUsed = 0
 			}
+			enterChatMode = true
+		case "ctrl+t":
+			if !loading {
+                for i, mo := range AiModelOrder {
+                    if mo == m.selectedAiModel {
+                        m.selectedAiModel = AiModelOrder[(i + 1) % len(AiModelOrder)]
+                        return m, nil
+                    }
+                }
+            }
 			enterChatMode = true
 		case "esc":
 			if chatMode {
@@ -56,9 +67,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				case <-time.After(10 * time.Millisecond):
 					pasteBufferClosed <- true
 				}
-				err := submitChatMessage(ctx, <-messagesReadyToSend)
+				err := submitChatMessage(ctx, <-messagesReadyToSend, m.selectedAiModel)
 				if err != nil {
-					loadingFinished <- fmt.Errorf("error, when submitChatMessage() for update(). Error: %v", err)
+					loadingFinished <- fmt.Errorf("error, when sending chat message for update. Error: %v", err)
 					return
 				}
 				loadingFinished <- nil
@@ -166,7 +177,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
                 for _, rm := range m.recordedMessages {
                     m.tokensUsed = len(rm) / 4
                 }
-			}
+            } else {
+                m.err = err
+            }
 		default:
 			m.spinner, cmd = m.spinner.Update(msg)
 			cmds = append(cmds, cmd)
